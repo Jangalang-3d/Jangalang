@@ -29,6 +29,12 @@ class Main {
             weaponSpriteList.add(ImageIO.read(Main.class.getResourceAsStream("/sprites/guns/pistol/2PISD0.png")));
             weaponSpriteList.add(ImageIO.read(Main.class.getResourceAsStream("/sprites/guns/pistol/2PISF0.png")));
             Game.weaponSprite = weaponSpriteList.toArray(new BufferedImage[0]);
+
+            ArrayList<BufferedImage> splashScreenList = new ArrayList<>();
+            splashScreenList.add(ImageIO.read(Main.class.getResourceAsStream("/splash-screens/splash-screen1.jpg")));
+            splashScreenList.add(ImageIO.read(Main.class.getResourceAsStream("/splash-screens/splash-screen2.jpg")));
+            splashScreenList.add(ImageIO.read(Main.class.getResourceAsStream("/splash-screens/splash-screen3.jpg")));
+            Game.splashScreens = splashScreenList.toArray(new BufferedImage[0]);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -39,5 +45,6 @@ class Main {
 
         new Window(renderer, keyScanner, mouseScanner);
         GameLoop.run();
+        Runtime.getRuntime().addShutdownHook(new Thread(GameLoop::stop));
     }
 }

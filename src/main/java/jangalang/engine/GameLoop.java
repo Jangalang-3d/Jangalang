@@ -1,31 +1,39 @@
 package jangalang.engine;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.*;
 import jangalang.util.GameProperties;
 
 public class GameLoop {
-    private static Timer deltaTime;
     private static final long tickRate = 1000 / GameProperties.getInt("game.tps");
-
-    private static Timer renderTime;
     private static final long frameRate = 1000 / GameProperties.getInt("game.fps");
 
-    public static void run() {
-        deltaTime = new Timer();
-        deltaTime.scheduleAtFixedRate(new TimerTask() {
-            public void run() {
-                Game.getMode().update();
-            }
-        }, 0, tickRate);
+    private final static ScheduledExecutorService executor =
+        Executors.newScheduledThreadPool(2);
 
-        renderTime = new Timer();
-        renderTime.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Window.getRenderer().repaint();
+    private volatile static boolean running = false;
+    public static void run() {
+        if (running) return;
+        running = true;
+
+        executor.scheduleAtFixedRate(() -> {
+            try {
+                Game.getMode().update();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        }, 0, frameRate);
+        }, 0, tickRate, TimeUnit.MILLISECONDS);
+
+        executor.scheduleAtFixedRate(() -> {
+            try {
+                Window.getRenderer().repaint();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 0, frameRate, TimeUnit.MILLISECONDS);
     }
 
+    public static void stop() {
+        running = false;
+        executor.shutdownNow();
+    }
 }

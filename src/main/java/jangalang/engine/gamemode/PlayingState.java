@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
+import java.awt.image.DataBufferInt;
 
 import jangalang.engine.Game;
 import jangalang.engine.GameState;
@@ -62,16 +63,17 @@ public class PlayingState implements GameMode {
         // --- Prepare fast framebuffer ---
         // Create a single buffered image we can write pixels into (INT_RGB for speed)
         BufferedImage frame = new BufferedImage(screenW, screenH, BufferedImage.TYPE_INT_RGB);
-        final int[] pixels = ((java.awt.image.DataBufferInt) frame.getRaster().getDataBuffer()).getData();
+        final int[] pixels = ((DataBufferInt) frame.getRaster().getDataBuffer()).getData();
 
-        // Clear ceiling and floor base colors quickly (ceiling: sky, floor: dark)
-        final int skyColor = (105 << 16) | (12 << 8) | 15;         // RGB -> int
-        final int floorBase = (30 << 16) | (30 << 8) | 30;
-        // Fill top half with sky, bottom half with base floor color to avoid per-pixel initial writes later
+        final int skyColor = (105 << 16) | (12 << 8) | 15;
+        // Render sky half
         for (int y = 0; y < screenH / 2; ++y) {
             int idx = y * screenW;
             for (int x = 0; x < screenW; ++x) pixels[idx++] = skyColor;
         }
+
+        final int floorBase = (30 << 16) | (30 << 8) | 30;
+        // Render floor half
         for (int y = screenH / 2; y < screenH; ++y) {
             int idx = y * screenW;
             for (int x = 0; x < screenW; ++x) pixels[idx++] = floorBase;
@@ -88,7 +90,6 @@ public class PlayingState implements GameMode {
         final double playerAngle = Math.atan2(dirY, dirX);
 
         final double fov = Player.FOV;
-        final double halfFov = fov / 2.0;
 
         // Precompute camera plane (perpendicular to view dir). We need this for floor-casting interpolation.
         // plane vector length is tan(fov/2)
@@ -161,13 +162,12 @@ public class PlayingState implements GameMode {
                 int fpix = floorPixels[ty * floorW + tx];
 
                 // Apply simple distance-based darkening (using rowDistance)
-                double maxView = Player.RAY_MAX_LENGTH;
-                double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, maxView), 1.0);
+                double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, Player.RAY_MAX_LENGTH), 1.0);
                 shade = 0.2 + 0.8 * shade;
-                int r = (int) ((((fpix >> 16) & 0xFF) * shade));
-                int gg = (int) ((((fpix >> 8) & 0xFF) * shade));
-                int b = (int) (((fpix & 0xFF) * shade));
-                int shaded = (r << 16) | (gg << 8) | b;
+                int red = (int) ((((fpix >> 16) & 0xFF) * shade));
+                int green = (int) ((((fpix >> 8) & 0xFF) * shade));
+                int blue = (int) (((fpix & 0xFF) * shade));
+                int shaded = (red << 16) | (green << 8) | blue;
 
                 pixels[baseIdx + x] = shaded;
 

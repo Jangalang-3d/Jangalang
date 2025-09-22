@@ -21,6 +21,7 @@ public class Game {
     public static BufferedImage floorTexture;
     public static BufferedImage wallTexture;
     public static BufferedImage[] weaponSprite;
+    public static BufferedImage[] splashScreens;
 
     public static void setGameState(GameState state) {
         switch (state) {

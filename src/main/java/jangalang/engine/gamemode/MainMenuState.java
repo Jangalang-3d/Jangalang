@@ -3,40 +3,37 @@ package jangalang.engine.gamemode;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+
 import javax.swing.JPanel;
 
 import jangalang.engine.GameState;
 import jangalang.engine.Game;
 
 public class MainMenuState implements GameMode {
+    private static final int splashScreenIndx = (int)(Math.random() * 10) % 3;
     @Override
     public void update() {
     }
 
     @Override
     public void render(JPanel window, Graphics g) {
-        window.setBackground(Color.BLACK);
+        window.setBackground(Color.BLACK); // Fallback
+        BufferedImage splashScreen = Game.splashScreens[splashScreenIndx];
+        g.drawImage(splashScreen, 0, 0, window.getWidth(), window.getHeight(), null);
 
-        String title = "Jangalang";
         String[] options = {
             "1. Start Game",
             "2. Controls/Info",
             "3. Quit"
         };
 
-        g.setFont(new Font("Arial", Font.BOLD, 36));
-        g.setColor(Color.WHITE);
-
         FontMetrics fm = g.getFontMetrics();
-        int titleWidth = fm.stringWidth(title);
-        int x = (window.getWidth() - titleWidth) / 2;
-        int y = window.getHeight() / 4;
-        g.drawString(title, x, y);
-
-        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        g.setFont(new Font("Arial", Font.BOLD, 24));
+        g.setColor(Color.WHITE);
         fm = g.getFontMetrics();
         int lineHeight = fm.getHeight();
-        int startY = window.getHeight() / 2;
+        int startY = (int)(window.getHeight() * 0.7);
 
         for (int i = 0; i < options.length; i++) {
             String option = options[i];
