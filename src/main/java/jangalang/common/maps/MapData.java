@@ -1,16 +1,16 @@
-package jangalang.engine.maps;
+package jangalang.common.maps;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import jangalang.util.types.Pair;
+import jangalang.common.types.Pair;
 
-public class Map implements Serializable {
+public class MapData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private ArrayList<Pair<Double, Double>> spawns;
     private ArrayList<Wall> walls;
 
-    public Map() {
+    public MapData() {
         this.spawns = new ArrayList<Pair<Double, Double>>();
         this.walls = new ArrayList<Wall>();
     }

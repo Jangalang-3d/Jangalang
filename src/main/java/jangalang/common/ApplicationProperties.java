@@ -1,14 +1,14 @@
-package jangalang.util;
+package jangalang.common;
 
 import java.util.Properties;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class GameProperties {
+public class ApplicationProperties {
     private static final Properties gameProps = new Properties();
 
     static {
-        try (InputStream in = GameProperties.class
+        try (InputStream in = ApplicationProperties.class
                 .getClassLoader()
                 .getResourceAsStream("application.properties")) {
 
@@ -23,7 +23,7 @@ public class GameProperties {
         }
     }
 
-    private GameProperties() {}
+    private ApplicationProperties() {}
 
     public static String get(String key) {
         return gameProps.getProperty(key);

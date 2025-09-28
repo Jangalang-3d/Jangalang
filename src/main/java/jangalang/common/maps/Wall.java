@@ -1,8 +1,8 @@
-package jangalang.engine.maps;
+package jangalang.common.maps;
 
 import java.io.Serializable;
 
-import jangalang.util.types.Pair;
+import jangalang.common.types.Pair;
 
 public class Wall implements Serializable {
     private static final long serialVersionUID = 1L;

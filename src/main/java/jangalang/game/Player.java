@@ -6,10 +6,10 @@ import java.io.Serializable;
 
 import javax.imageio.ImageIO;
 
-import jangalang.engine.maps.Map;
-import jangalang.engine.maps.Wall;
-import jangalang.util.GameProperties;
-import jangalang.util.types.Vector;
+import jangalang.common.maps.MapData;
+import jangalang.common.maps.Wall;
+import jangalang.common.ApplicationProperties;
+import jangalang.common.types.Vector;
 
 public class Player implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -25,9 +25,9 @@ public class Player implements Serializable {
     private static final double MAX_SPEED = 0.3;
     private static final double FRICTION = 0.9;
 
-    public static double RAY_MAX_LENGTH = GameProperties.getDouble("game.user.viewdist");
-    public static int RAY_COUNT = GameProperties.getInt("game.user.resolution");
-    public static double FOV = Math.toRadians(GameProperties.getInt("game.user.fov"));
+    public static double RAY_MAX_LENGTH = ApplicationProperties.getDouble("game.user.viewdist");
+    public static int RAY_COUNT = ApplicationProperties.getInt("game.user.resolution");
+    public static double FOV = Math.toRadians(ApplicationProperties.getInt("game.user.fov"));
 
     private Vector[] rays = new Vector[RAY_COUNT];
     private double viewAngleOffset = 0;
@@ -51,7 +51,7 @@ public class Player implements Serializable {
 
     }
 
-    public void move(Map gameMap, double dirX, double dirY, boolean accelerating) {
+    public void move(MapData gameMap, double dirX, double dirY, boolean accelerating) {
         if (accelerating) {
             // Normalize direction
             double len = Math.sqrt(dirX * dirX + dirY * dirY);

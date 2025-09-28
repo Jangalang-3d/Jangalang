@@ -2,7 +2,7 @@ package jangalang.engine;
 
 import javax.swing.JFrame;
 import javax.swing.JComponent;
-import jangalang.util.GameProperties;
+import jangalang.common.ApplicationProperties;
 
 import java.awt.Cursor;
 import java.awt.GraphicsDevice;
@@ -13,7 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 
 public class Window {
-    public static final int WIDTH = GameProperties.getInt("window.width");
+    public static final int WIDTH = ApplicationProperties.getInt("window.width");
     public static final int HEIGHT = WIDTH / 12 * 9;
     private static JFrame gameWindow;
     private static JComponent renderer;
@@ -32,7 +32,7 @@ public class Window {
         // result.setSize(WIDTH, HEIGHT);
         result.setResizable(false); // Frick u, we pick the window size
         result.setLocationRelativeTo(null);
-        result.setTitle(GameProperties.get("game.name"));
+        result.setTitle(ApplicationProperties.get("game.name"));
         result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         result.setUndecorated(true);
 
@@ -54,7 +54,7 @@ public class Window {
             e.printStackTrace();
         }
 
-        if (GameProperties.get("game.user.hidemouse").equals("true")) {
+        if (ApplicationProperties.get("game.user.hidemouse").equals("true")) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
             BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
             Cursor blankCursor = toolkit.createCustomCursor(cursorImg, new Point(0, 0), "blank");

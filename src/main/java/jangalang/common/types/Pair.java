@@ -1,4 +1,4 @@
-package jangalang.util.types;
+package jangalang.common.types;
 
 import java.io.Serializable;
 

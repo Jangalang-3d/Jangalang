@@ -1,4 +1,4 @@
-package jangalang.engine.maps;
+package jangalang.common.maps;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -11,8 +11,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 
 public class MapLoader {
-    public static Map parseMap(String file) {
-        Map result = new Map();
+    public static MapData parseMap(String file) {
+        MapData result = new MapData();
         JSONParser parser = new JSONParser();
 
         try (

@@ -9,18 +9,18 @@ import java.awt.image.DataBufferInt;
 
 import jangalang.engine.Game;
 import jangalang.engine.GameState;
-import jangalang.engine.maps.Map;
-import jangalang.engine.maps.Wall;
+import jangalang.common.maps.MapData;
+import jangalang.common.maps.Wall;
 import jangalang.game.Player;
-import jangalang.util.types.Vector;
-import jangalang.util.GameProperties;
+import jangalang.common.types.Vector;
+import jangalang.common.ApplicationProperties;
 
 import java.util.HashSet;
 
 public class PlayingState implements GameMode {
     private HashSet<String> keySet = new HashSet<String>();
     private Player player = Game.getPlayer();
-    private Map gameMap = Game.getMap();
+    private MapData gameMap = Game.getMap();
 
     private int currentFireFrame = 0;
     private boolean isShooting = false;
@@ -296,7 +296,7 @@ public class PlayingState implements GameMode {
 
     @Override
     public void mouseMoved(int e) {
-        player.rotate(e * GameProperties.getDouble("game.user.sensitivity"));
+        player.rotate(e * ApplicationProperties.getDouble("game.user.sensitivity"));
     }
 
     @Override

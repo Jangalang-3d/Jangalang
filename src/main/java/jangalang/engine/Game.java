@@ -8,13 +8,13 @@ import jangalang.engine.gamemode.MainMenuState;
 import jangalang.engine.gamemode.PauseState;
 import jangalang.engine.gamemode.PlayingState;
 import jangalang.game.Player;
-import jangalang.engine.maps.Map;
-import jangalang.engine.maps.MapLoader;
-import jangalang.util.types.Pair;
+import jangalang.common.maps.MapData;
+import jangalang.common.maps.MapLoader;
+import jangalang.common.types.Pair;
 
 public class Game {
     private static GameMode gameMode = new MainMenuState();
-    private static Map gameMap = MapLoader.parseMap("/maps/example.map");
+    private static MapData gameMap = MapLoader.parseMap("/maps/example.map");
     private static final Pair<Double, Double> spawn = gameMap.getSpawns().getFirst();
     private static Player player = new Player(spawn.getKey(), spawn.getValue());
 
@@ -40,7 +40,7 @@ public class Game {
         return player;
     }
 
-    public static Map getMap() {
+    public static MapData getMap() {
         return gameMap;
     }
 }
