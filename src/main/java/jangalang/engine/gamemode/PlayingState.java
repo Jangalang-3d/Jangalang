@@ -164,9 +164,9 @@ public class PlayingState implements GameMode {
                 // Apply simple distance-based darkening (using rowDistance)
                 double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, Player.RAY_MAX_LENGTH), 1.0);
                 shade = 0.2 + 0.8 * shade;
-                int red = (int) ((((fpix >> 16) & 0xFF) * shade));
-                int green = (int) ((((fpix >> 8) & 0xFF) * shade));
-                int blue = (int) (((fpix & 0xFF) * shade));
+                int red = (int) (((fpix >> 16) & 0xFF) * shade);
+                int green = (int) (((fpix >> 8) & 0xFF) * shade);
+                int blue = (int) ((fpix & 0xFF) * shade);
                 int shaded = (red << 16) | (green << 8) | blue;
 
                 pixels[baseIdx + x] = shaded;
@@ -220,9 +220,6 @@ public class PlayingState implements GameMode {
             if (texCol < 0) texCol = 0;
             if (texCol >= wallW) texCol = wallW - 1;
 
-            // Grab wall column from texture into local array for faster row sampling (not strictly necessary,
-            // but reduces indexing arithmetic a bit).
-            // We will sample texture rows per screen y by mapping y -> texRow.
             final int colIndexBase = texCol; // column offset in texture
 
             // Loop over vertical slice and copy into framebuffer
@@ -239,9 +236,9 @@ public class PlayingState implements GameMode {
                 double maxView = Player.RAY_MAX_LENGTH;
                 double shade = 1.0 - Math.min(perpDist / Math.max(1.0, maxView), 1.0);
                 shade = 0.2 + 0.8 * shade;
-                int r = (int) ((((texturePixel >> 16) & 0xFF) * shade));
-                int gg = (int) ((((texturePixel >> 8) & 0xFF) * shade));
-                int b = (int) (((texturePixel & 0xFF) * shade));
+                int r = (int) (((texturePixel >> 16) & 0xFF) * shade);
+                int gg = (int) (((texturePixel >> 8) & 0xFF) * shade);
+                int b = (int) ((texturePixel & 0xFF) * shade);
                 int shaded = (r << 16) | (gg << 8) | b;
 
                 pixels[y * screenW + x] = shaded;

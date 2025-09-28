@@ -2,6 +2,7 @@ package jangalang.game;
 
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import javax.imageio.ImageIO;
 
@@ -10,7 +11,9 @@ import jangalang.engine.maps.Wall;
 import jangalang.util.GameProperties;
 import jangalang.util.types.Vector;
 
-public class Player {
+public class Player implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private double xCoord;
     private double yCoord;
     private final int size = 1;
@@ -25,10 +28,11 @@ public class Player {
     public static double RAY_MAX_LENGTH = GameProperties.getDouble("game.user.viewdist");
     public static int RAY_COUNT = GameProperties.getInt("game.user.resolution");
     public static double FOV = Math.toRadians(GameProperties.getInt("game.user.fov"));
+
     private Vector[] rays = new Vector[RAY_COUNT];
     private double viewAngleOffset = 0;
 
-    private BufferedImage weaponSprite;
+    private transient BufferedImage weaponSprite;
 
     public Player (double xCoord, double yCoord) {
         this.xCoord = xCoord;

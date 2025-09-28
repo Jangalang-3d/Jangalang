@@ -1,6 +1,9 @@
 package jangalang.util.types;
 
-public class Pair<K, V> {
+import java.io.Serializable;
+
+public class Pair<K, V> implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final K key;
     private final V value;
 
@@ -22,7 +25,9 @@ public class Pair<K, V> {
         return this.value;
     }
 
-    public boolean equals(Pair<K, V> pair) {
+    public boolean equals(Object o) {
+        if (!(o instanceof Pair)) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
         return this.key.equals(pair.key) && this.value.equals(pair.value);
     }
 

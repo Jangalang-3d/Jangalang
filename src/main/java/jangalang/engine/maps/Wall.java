@@ -1,8 +1,12 @@
 package jangalang.engine.maps;
 
+import java.io.Serializable;
+
 import jangalang.util.types.Pair;
 
-public class Wall {
+public class Wall implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public Pair<Double, Double> start;
     public Pair<Double, Double> end;
 
@@ -59,10 +63,9 @@ public class Wall {
         double t = (rdx * qy - rdy * qx) / denom; // segment param (0..1)
         double u = (sx * qy - sy * qx) / denom; // ray param (>=0)
 
-        if (t >= 0.0 && t <= 1.0 && u >= 0.0) {
-            return u;
-        }
-        return null;
+        return t >= 0.0 && t <= 1.0 && u >= 0.0
+            ? u
+            : null;
     }
 
     public double[] getNormal() {
@@ -81,7 +84,9 @@ public class Wall {
         return new double[]{ nx/len, ny/len };
     }
 
-    public boolean equals(Wall w) {
+    public boolean equals(Object o) {
+        if (!(o instanceof Wall)) return false;
+        Wall w = (Wall) o;
         return this.start.equals(w.start) && this.end.equals(w.end);
     }
 }

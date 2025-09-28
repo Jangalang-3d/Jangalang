@@ -1,6 +1,9 @@
 package jangalang.util.types;
 
-public class Vector {
+import java.io.Serializable;
+
+public class Vector implements Serializable {
+    private static final long serialVersionUID = 1L;
     public double x;
     public double y;
 
@@ -28,7 +31,9 @@ public class Vector {
         this.y *= d;
     }
 
-    public boolean equals(Vector v) {
+    public boolean equals(Object o) {
+        if (!(o instanceof Vector)) return false;
+        Vector v = (Vector) o;
         return this.x == v.x && this.y == v.y;
     }
 }
