@@ -56,7 +56,8 @@ public class GameServer {
         int id = nextId.getAndIncrement();
         clients.put(id, new ClientInfo(id, addr, clientUdpPort));
         // spawn
-        double sx = 0, sy = 0;
+        double sx = 0;
+        double sy = 0;
         if (!map.getSpawns().isEmpty()) {
             sx = map.getSpawns().get(0).getKey();
             sy = map.getSpawns().get(0).getValue();
@@ -109,8 +110,11 @@ public class GameServer {
                     if (q != null) q.add(ip);
                 }
                 // ignore other UDP message types for now
-            } catch (SocketException se) { break; }
-            catch (Exception e) { e.printStackTrace(); }
+            } catch (SocketException se) {
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -138,7 +142,7 @@ public class GameServer {
     private void broadcastSnapshot() {
         Collection<ClientInfo> conns = clients.values();
         PlayerState[] arr = players.values().stream()
-            .map(p -> new PlayerState(p.id, p.x, p.y, p.vx, p.vy, p.viewAngle))
+            .map(p -> new PlayerState(p.id, p.xCoord, p.yCoord, p.velX, p.velY, p.viewAngle))
             .toArray(PlayerState[]::new);
         // For simplicity we don't ack per-client tick here; we'll include last tick processed if we want.
         for (ClientInfo ci : conns) {
@@ -153,68 +157,6 @@ public class GameServer {
                 DatagramPacket dp = new DatagramPacket(data, data.length, ci.addr, ci.udpPort);
                 udpSocket.send(dp);
             } catch (Exception ex) { ex.printStackTrace(); }
-        }
-    }
-
-    // nested types
-    static class ClientInfo {
-        public final int id;
-        public final InetAddress addr;
-        public final int udpPort;
-        public ClientInfo(int id, InetAddress a, int p){ this.id=id; this.addr=a; this.udpPort=p;}
-    }
-
-    static class ServerPlayer {
-        public final int id;
-        public double x,y;
-        public double vx, vy;
-        public double viewAngle = 0.0;
-        public long lastProcessedClientTick = 0;
-        private static final double ACCEL = 0.01;
-        private static final double MAX_SPEED = 0.3;
-        private static final double FRICTION = 0.9;
-        public ServerPlayer(int id,double x,double y){ this.id=id; this.x=x; this.y=y; this.vx=0; this.vy=0; }
-        public void applyInput(InputPacket in) {
-            double dirX=0, dirY=0;
-            double fx = Math.cos(in.viewAngle), fy = Math.sin(in.viewAngle);
-            if (in.forward) { dirX += fx; dirY += fy; }
-            if (in.backward) { dirX -= fx; dirY -= fy; }
-            if (in.left) { dirX += fy; dirY -= fx; }
-            if (in.right) { dirX -= fy; dirY += fx; }
-            boolean accelerating = (dirX!=0 || dirY!=0);
-            if (accelerating) {
-                double len = Math.hypot(dirX,dirY);
-                dirX /= len; dirY /= len;
-                vx += dirX*ACCEL;
-                vy += dirY*ACCEL;
-                double speed = Math.hypot(vx,vy);
-                if (speed > MAX_SPEED) {
-                    vx = (vx / speed) * MAX_SPEED;
-                    vy = (vy / speed) * MAX_SPEED;
-                }
-            } else {
-                vx *= FRICTION;
-                vy *= FRICTION;
-            }
-            x += vx;
-            y += vy;
-            viewAngle = in.viewAngle;
-        }
-        public void resolveCollisions(MapData map) {
-            double newX = this.x, newY = this.y;
-            double radius = 0.5;
-            for (Wall w : map.getWalls()) {
-                if (w.playerIntersect(newX, newY, radius)) {
-                    double[] n = w.getNormal();
-                    double nx=n[0], ny=n[1];
-                    double dot = vx*nx + vy*ny;
-                    vx = vx - dot*nx;
-                    vy = vy - dot*ny;
-                    newX = this.x + vx;
-                    newY = this.y + vy;
-                }
-            }
-            this.x = newX; this.y = newY;
         }
     }
 }

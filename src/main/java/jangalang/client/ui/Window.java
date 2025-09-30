@@ -15,6 +15,8 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 import jangalang.client.ClientGame;
+import jangalang.client.scanners.KeyScanner;
+import jangalang.client.scanners.MouseScanner;
 import jangalang.common.ApplicationProperties;
 
 public class Window {
@@ -32,8 +34,8 @@ public class Window {
         frame.setLocationRelativeTo(null);
         renderer = new RendererPanel(game);
         frame.getContentPane().add(renderer);
-        installInputs();
         frame.setVisible(true);
+        installInputs();
         // repaint loop
         new Timer(1000 / ApplicationProperties.getInt("game.fps"), ev -> {
             renderer.repaint();
@@ -43,46 +45,11 @@ public class Window {
 
     private void installInputs() {
         renderer.setFocusable(true);
-        renderer.addMouseMotionListener(new MouseAdapter() {
-            @Override public void mouseMoved(MouseEvent e) {
-                // compute dx relative to centre
-                Point onScreen = renderer.getLocationOnScreen();
-                int cx = onScreen.x + renderer.getWidth() / 2;
-                int dx = e.getXOnScreen() - cx;
-                game.mouseMoved(dx);
-                try {
-                    Robot r = new Robot();
-                    r.mouseMove(cx, onScreen.y + renderer.getHeight()/2);
-                } catch (Exception ignored) {}
-            }
-        });
-
-        renderer.addKeyListener(new KeyAdapter() {
-            // private final Set<Integer> pressed = new HashSet<>();
-            @Override public void keyPressed(KeyEvent e) {
-                // if (pressed.contains(e.getKeyCode())) return;
-                // pressed.add(e.getKeyCode());
-                // boolean fw = pressed.contains(KeyEvent.VK_W);
-                // boolean bk = pressed.contains(KeyEvent.VK_S);
-                // boolean lf = pressed.contains(KeyEvent.VK_A);
-                // boolean rt = pressed.contains(KeyEvent.VK_D);
-
-                // game.sendInput(fw, bk, lf, rt, 0.0);
-
-                game.keyPressed(e);
-            }
-            @Override public void keyReleased(KeyEvent e) {
-                // pressed.remove(e.getKeyCode());
-                // boolean fw = pressed.contains(KeyEvent.VK_W);
-                // boolean bk = pressed.contains(KeyEvent.VK_S);
-                // boolean lf = pressed.contains(KeyEvent.VK_A);
-                // boolean rt = pressed.contains(KeyEvent.VK_D);
-                // game.sendInput(fw, bk, lf, rt, 0.0);
-
-                game.keyReleased(e);
-            }
-        });
-    }
+        MouseScanner mScanner = new MouseScanner(renderer, game);
+        renderer.addMouseListener(mScanner);
+        renderer.addMouseMotionListener(mScanner);
+        renderer.addKeyListener(new KeyScanner(game));
+       }
 
     static class RendererPanel extends JPanel {
         private final ClientGame game;

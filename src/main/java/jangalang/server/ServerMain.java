@@ -46,7 +46,10 @@ public class ServerMain {
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("Shutting down server");
-                try { ss.close(); } catch (Exception ignored) {}
+                try {
+                    ss.close();
+                } catch (Exception ignored) {}
+
                 server.stop();
                 acceptPool.shutdownNow();
             }));
