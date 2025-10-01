@@ -12,6 +12,11 @@ public class Vector implements Serializable {
         this.y = 0;
     }
 
+    public Vector(double viewAngle) {
+        this.x = Math.cos(viewAngle);
+        this.y = Math.sin(viewAngle);
+    }
+
     public Vector(double x, double y) {
         this.x = x;
         this.y = y;

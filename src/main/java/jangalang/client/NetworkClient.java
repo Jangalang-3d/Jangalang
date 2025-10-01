@@ -1,5 +1,6 @@
 package jangalang.client;
 
+import jangalang.common.maps.MapData;
 import jangalang.common.net.messages.Disconnect;
 import jangalang.common.net.messages.HandshakeRequest;
 import jangalang.common.net.messages.HandshakeResponse;
@@ -33,6 +34,8 @@ public class NetworkClient {
     // callback when state snapshot arrives
     private Consumer<StateSnapshot> onSnapshot;
 
+    private MapData map;
+
     public NetworkClient(String host, int tcpPort) throws Exception {
         this.serverHost = host; this.serverTcpPort = tcpPort;
         connectTcp();
@@ -57,12 +60,14 @@ public class NetworkClient {
         HandshakeResponse r = (HandshakeResponse) resp;
         this.assignedId = r.assignedId;
         this.serverUdpPort = r.serverUdpPort;
+        this.map = r.map;
         System.out.printf("Handshake complete: id=%d serverUdp=%d mapLoaded%n", assignedId, serverUdpPort);
         // start UDP receive loop
         udpReceiver.submit(this::udpLoop);
     }
 
     public int getAssignedId() { return assignedId; }
+    public MapData getMap() { return map; }
     public DatagramSocket getUdpSocket() { return udpSocket; }
     public InetAddress getServerAddress() { return serverAddr; }
     public int getServerUdpPort() { return serverUdpPort; }
