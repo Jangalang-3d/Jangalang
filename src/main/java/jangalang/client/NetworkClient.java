@@ -5,8 +5,6 @@ import jangalang.common.net.messages.HandshakeRequest;
 import jangalang.common.net.messages.HandshakeResponse;
 import jangalang.common.net.messages.StateSnapshot;
 import jangalang.common.net.messages.InputPacket;
-import jangalang.common.maps.MapData;
-import jangalang.common.ApplicationProperties;
 
 import java.net.*;
 import java.io.*;

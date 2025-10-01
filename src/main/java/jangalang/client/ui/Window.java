@@ -1,14 +1,6 @@
 package jangalang.client.ui;
 
-import java.awt.Point;
-import java.awt.Robot;
 import java.awt.Graphics;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -28,10 +20,13 @@ public class Window {
         this.game = game;
         frame = new JFrame("Jangalang (multiplayer)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        int w = Integer.parseInt(System.getProperty("window.width", "1280"));
-        int h = w * 9 / 12;
+        final int w = ApplicationProperties.getInt("window.width");
+        final int h = w * 9 / 12;
         frame.setSize(w,h);
         frame.setLocationRelativeTo(null);
+        frame.setUndecorated(true);
+        frame.setResizable(false);
+
         renderer = new RendererPanel(game);
         frame.getContentPane().add(renderer);
         frame.setVisible(true);
@@ -49,7 +44,7 @@ public class Window {
         renderer.addMouseListener(mScanner);
         renderer.addMouseMotionListener(mScanner);
         renderer.addKeyListener(new KeyScanner(game));
-       }
+    }
 
     static class RendererPanel extends JPanel {
         private final ClientGame game;

@@ -1,0 +1,4 @@
+walls:/textures/walls/manifest.txt
+floors:/textures/ground/manifest.txt
+weapon:/sprites/guns/pistol/manifest.txt
+splash:/splash-screens/manifest.txt

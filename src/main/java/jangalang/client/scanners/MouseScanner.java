@@ -18,7 +18,6 @@ public class MouseScanner extends MouseAdapter {
     private boolean offsetToggle = false;
 
     public MouseScanner(JComponent window, ClientGame game) {
-        System.out.println("MouseScanner init");
         this.game = game;
         try {
             this.robot = new Robot();
@@ -29,6 +28,7 @@ public class MouseScanner extends MouseAdapter {
         Dimension size = window.getSize();
         Point location = window.getLocationOnScreen();
         this.center = new Point(location.x + size.width / 2, location.y + size.height / 2);
+        System.out.println("MouseScanner initialized");
     }
 
     private void onMouseMove(MouseEvent e) {

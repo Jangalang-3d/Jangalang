@@ -14,6 +14,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
+import jangalang.client.game.PredictedPlayer;
+import jangalang.client.game.RemotePlayer;
 import jangalang.client.ui.GameMode;
 
 /**
@@ -57,10 +59,10 @@ public class ClientGame implements GameMode {
     }
 
     // call to send input from UI: forward/back/left/right, mouseDelta
-    public void sendInput(boolean f, boolean b, boolean l, boolean r, double mouseDelta) {
+    public void sendInput(boolean forward, boolean backward, boolean left, boolean right, double mouseDelta) {
         clientTick++;
-        double newView = local.viewAngle + mouseDelta;
-        InputPacket ip = new InputPacket(clientId, clientTick, f, b, l, r, mouseDelta, newView);
+        double newView = local.getViewAngle() + mouseDelta;
+        InputPacket ip = new InputPacket(clientId, clientTick, forward, backward, left, right, mouseDelta, newView);
         // apply prediction locally
         local.applyInput(ip);
         pendingInputs.put(clientTick, ip);
@@ -84,12 +86,17 @@ public class ClientGame implements GameMode {
         for (PlayerState ps : snap.players) {
             if (ps.id == clientId) {
                 // reconciliation for local player
-                double dx = ps.xCoord - local.x;
-                double dy = ps.yCoord - local.y;
+                double dx = ps.xCoord - local.getXCoord();
+                double dy = ps.yCoord - local.getYCoord();
                 double err = Math.hypot(dx,dy);
                 if (err > 0.001) {
                     // correct and replay pending inputs after ack tick
-                    local.x = ps.xCoord; local.y = ps.yCoord; local.vx = ps.velX; local.vy = ps.velY; local.viewAngle = ps.viewAngle;
+                    local.setXCoord(ps.xCoord);
+                    local.setYCoord(ps.yCoord);
+                    local.setVelX(ps.velX);
+                    local.setVelY(ps.velY);
+                    local.setViewAngle(ps.viewAngle);
+
                     // replay all pending inputs with tick > snap.ackClientTick
                     long ack = snap.ackClientTick;
                     SortedMap<Long, InputPacket> toReplay = pendingInputs.tailMap(ack+1);
@@ -112,15 +119,15 @@ public class ClientGame implements GameMode {
 
     // expose state for rendering
     public double getLocalX() {
-        return local.x;
+        return local.getXCoord();
     }
 
     public double getLocalY() {
-        return local.y;
+        return local.getYCoord();
     }
 
     public double getLocalViewAngle() {
-        return local.viewAngle;
+        return local.getViewAngle();
     }
 
     public MapData getMap() {
@@ -145,7 +152,14 @@ public class ClientGame implements GameMode {
         // For brevity this demo just draws a HUD and remote players.
         window.setBackground(Color.darkGray);
         g.setColor(Color.WHITE);
-        g.drawString(String.format("Client %d  Local: (%.2f, %.2f), va=%.2f pending=%d", clientId, local.x, local.y, local.viewAngle, pendingInputs.size()), 10, 20);
+        g.drawString(
+                     String.format("Client %d  Local: (%.2f, %.2f), va=%.2f pending=%d",
+                                   clientId,
+                                   local.getXCoord(),
+                                   local.getYCoord(),
+                                   local.getViewAngle(),
+                                   pendingInputs.size()),
+                     10, 20);
 
         // draw simple markers for remote players
         int idx = 0;
@@ -155,7 +169,12 @@ public class ClientGame implements GameMode {
             g.setColor(Color.CYAN);
             g.fillOval(sx, sy, 12, 12);
             g.setColor(Color.WHITE);
-            g.drawString(String.format("P%d (%.2f,%.2f)", rp.id, rp.x, rp.y), sx + 16, sy + 10);
+            g.drawString(
+                         String.format("P%d (%.2f,%.2f)",
+                                       rp.getId(),
+                                       rp.getXCoord(),
+                                       rp.getYCoord()),
+                         sx + 16, sy + 10);
             idx++;
         }
     }
@@ -180,104 +199,5 @@ public class ClientGame implements GameMode {
     @Override public void mouseMoved(int e) {
         // forwarded mouse delta: convert to an input with zero movement and only rotation
         sendInput(false, false, false, false, e * ApplicationProperties.getDouble("game.user.sensitivity"));
-    }
-
-    // internal helper classes: predicted local player and remote players
-    static class PredictedPlayer {
-        private double x = 0;
-        private double y = 0;
-        private double vx = 0;
-        private double vy = 0;
-        private double viewAngle = 0;
-        private static final double ACCEL = 0.01;
-        private static final double MAX_SPEED = 0.3;
-        private static final double FRICTION = 0.9;
-        public HashSet<String> keySet = new HashSet<String>();
-
-        public void applyInput(InputPacket ip) {
-            double dirX = 0;
-            double dirY = 0;
-            double fx = Math.cos(ip.viewAngle);
-            double fy = Math.sin(ip.viewAngle);
-            if (ip.forward) {
-                dirX += fx;
-                dirY += fy;
-            }
-            if (ip.backward) {
-                dirX -= fx;
-                dirY -= fy;
-            }
-            if (ip.left) {
-                dirX += fy;
-                dirY -= fx;
-            }
-            if (ip.right) {
-                dirX -= fy;
-                dirY += fx;
-            }
-            boolean acc = (dirX != 0 || dirY != 0);
-            if (acc) {
-                double len = Math.hypot(dirX, dirY);
-                dirX /= len;
-                dirY /= len;
-                vx += dirX*ACCEL;
-                vy += dirY*ACCEL;
-
-                double speed = Math.hypot(vx, vy);
-                if (speed > MAX_SPEED) {
-                    vx = (vx / speed) * MAX_SPEED;
-                    vy = (vy / speed) * MAX_SPEED;
-                }
-            } else {
-                vx *= FRICTION;
-                vy *= FRICTION;
-            }
-            x += vx;
-            y += vy;
-            viewAngle = ip.viewAngle;
-        }
-    }
-
-    static class RemotePlayer {
-        final int id;
-        volatile double x;
-        volatile double y;
-        volatile double vx;
-        volatile double vy;
-        volatile double viewAngle;
-
-        // interpolation target
-        volatile double tx;
-        volatile double ty;
-        volatile double tvx;
-        volatile double tvy;
-        volatile double tAngle;
-
-        final Object lock = new Object();
-        public RemotePlayer(int id) {
-            this.id = id;
-            this.x = this.y = 0;
-            this.vx = this.vy = 0;
-        }
-        public void receiveServerState(PlayerState ps) {
-            synchronized(lock) {
-                // set target to server values; we'll lerp in simulate()
-                tx = ps.xCoord;
-                ty = ps.yCoord;
-                tvx = ps.velX;
-                tvy = ps.velY;
-                tAngle = ps.viewAngle;
-            }
-        }
-        public void simulate(double dt) {
-            synchronized(lock) {
-                // simple linear interpolation towards target (smooth correction)
-                double blend = Math.min(1.0, dt * 10.0); // correction speed
-                x += (tx - x) * blend;
-                y += (ty - y) * blend;
-                vx = tvx; vy = tvy;
-                viewAngle += (tAngle - viewAngle) * blend;
-            }
-        }
     }
 }

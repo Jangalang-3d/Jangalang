@@ -36,7 +36,7 @@ public class MouseScanner implements MouseListener, MouseMotionListener {
         }
 
         // Get delta mouse movement
-        int dx = e.getXOnScreen() + (offsetToggle ? 1 : 0) - center.x;
+        int dx = e.getXOnScreen() + (offsetToggle ? 1 : 0) - center.y;
         if (dx != 0) { // Don't send non-movements
             Game.getMode().mouseMoved(dx);
         }

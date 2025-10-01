@@ -58,9 +58,10 @@ public class GameServer {
         // spawn
         double sx = 0;
         double sy = 0;
-        if (!map.getSpawns().isEmpty()) {
-            sx = map.getSpawns().get(0).getKey();
-            sy = map.getSpawns().get(0).getValue();
+        if (!map.getSpawns().isEmpty() && clients.size() <= map.getSpawns().size()) {
+            // Subtracting 1 because ids begin at 1
+            sx = map.getSpawns().get(clients.size() - 1).getKey();
+            sy = map.getSpawns().get(clients.size() - 1).getValue();
         }
         ServerPlayer sp = new ServerPlayer(id, sx, sy);
         players.put(id, sp);

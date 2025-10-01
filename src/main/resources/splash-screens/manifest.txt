@@ -1,0 +1,3 @@
+splash-screen1.jpg
+splash-screen2.jpg
+splash-screen3.jpg

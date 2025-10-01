@@ -7,6 +7,8 @@ public class ClientMain {
     public static void main(String[] args) throws Exception {
         String host = ApplicationProperties.get("server.host");
         int tcpPort = ApplicationProperties.getInt("server.tcp");
+
+        ResourceLoader.load();
         NetworkClient network = new NetworkClient(host, tcpPort);
         ClientGame game = new ClientGame(network);
         // Window + renderer use the client-side GameMode (PlayingState adapted)
