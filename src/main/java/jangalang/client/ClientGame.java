@@ -241,8 +241,8 @@ public class ClientGame implements GameMode {
             // Interpolate start world point (floor) for x=0 and step per column
             // worldX = ox + dir * rowDistance; but we need different direction per column between leftRay and rightRay.
             // Precompute base for left ray:
-            final double floorStartX = ox + leftRayX * rowDistance;
-            final double floorStartY = oy + leftRayY * rowDistance;
+            final double floorStartX = (ox * -0.5) + leftRayX * rowDistance;
+            final double floorStartY = (oy * -0.5) + leftRayY * rowDistance;
             // step increments (difference across the screen)
             final double stepX = (rightRayX - leftRayX) * (rowDistance / (double) (screenW - 1));
             final double stepY = (rightRayY - leftRayY) * (rowDistance / (double) (screenW - 1));
@@ -284,7 +284,9 @@ public class ClientGame implements GameMode {
         }
 
         // --- WALL RENDERING (per-column) ---
-        // Use the same projection method as floor casting for consistency
+        final double textureScaleHorizontal = 2.0; // Tiling for horizontal walls
+        final double textureScaleVertical = 1.0; // Tiling for vertical walls
+
         for (int x = 0; x < screenW; ++x) {
             double cameraX = (2.0 * x / (screenW - 1) - 1.0);
             double rdx = dirX + planeX * cameraX;
@@ -307,67 +309,67 @@ public class ClientGame implements GameMode {
             }
 
             if (closest == Double.POSITIVE_INFINITY) {
-                continue; // No wall hit, skip this column
+                continue;
             }
 
-            // SIMPLIFIED: Use perpendicular distance directly (no cosine correction needed with this method)
             double perpDist = closest;
-
-            // Calculate wall height using consistent projection
-            int lineHeight = (int)(screenH / perpDist);
+            int lineHeight = (int) (screenH / perpDist);
             int drawStart = screenH / 2 - lineHeight / 2;
             int drawEnd = screenH / 2 + lineHeight / 2;
 
-            // Clamp to screen bounds
-            if (drawStart < 0) drawStart = 0;
-            if (drawEnd >= screenH) drawEnd = screenH - 1;
+            if (drawStart < 0)
+                drawStart = 0;
+            if (drawEnd >= screenH)
+                drawEnd = screenH - 1;
 
-            // Texture coordinate calculation
+            // Texture coordinate calculation with intelligent tiling
             double texXf = 0.0;
+            double textureScale = textureScaleHorizontal; // default
+
             if (hitWall != null) {
-                // Calculate exact hit position along the wall segment
                 double wallDx = hitWall.end.getKey() - hitWall.start.getKey();
                 double wallDy = hitWall.end.getValue() - hitWall.start.getValue();
                 double wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
 
-                // Vector from wall start to hit point
                 double hitDx = hitX - hitWall.start.getKey();
                 double hitDy = hitY - hitWall.start.getValue();
 
-                // Project hit vector onto wall vector to get position along wall
                 double hitDist = (hitDx * wallDx + hitDy * wallDy) / wallLength;
-                texXf = hitDist / wallLength;
 
-                // Ensure texture coordinate is within [0,1]
+                // Determine if wall is more horizontal or vertical
+                boolean isHorizontal = Math.abs(wallDx) > Math.abs(wallDy);
+                textureScale = isHorizontal ? textureScaleHorizontal : textureScaleVertical;
+
+                texXf = hitDist * textureScale;
                 texXf = texXf - Math.floor(texXf);
-                if (texXf < 0) texXf += 1.0;
             }
 
-            int texCol = (int)(texXf * wallW);
+            int texCol = (int) (texXf * wallW);
             texCol = Math.max(0, Math.min(wallW - 1, texCol));
 
             // Render wall slice
             for (int y = drawStart; y <= drawEnd; ++y) {
-                double texY = (y - drawStart) / (double)lineHeight;
-                int texRow = (int)(texY * wallH);
+                double relativeY = (y - drawStart) / (double) lineHeight;
+                double texY = relativeY * textureScale;
+                texY = texY - Math.floor(texY);
+
+                int texRow = (int) (texY * wallH);
                 texRow = Math.max(0, Math.min(wallH - 1, texRow));
 
                 int texturePixel = wallPixels[texRow * wallW + texCol];
 
-                // Distance-based shading
                 double maxView = ApplicationProperties.getDouble("game.user.viewdist");
                 double shade = 1.0 - Math.min(perpDist / maxView, 1.0);
                 shade = 0.3 + 0.7 * shade;
 
-                int r = (int)(((texturePixel >> 16) & 0xFF) * shade);
-                int gg = (int)(((texturePixel >> 8) & 0xFF) * shade);
-                int b = (int)((texturePixel & 0xFF) * shade);
+                int r = (int) (((texturePixel >> 16) & 0xFF) * shade);
+                int gg = (int) (((texturePixel >> 8) & 0xFF) * shade);
+                int b = (int) ((texturePixel & 0xFF) * shade);
                 int shaded = (r << 16) | (gg << 8) | b;
 
                 pixels[y * screenW + x] = shaded;
             }
         }
-
         // --- BLIT FRAMEBUFFER ONTO SCREEN ---
         g.drawImage(frame, 0, 0, null);
 
