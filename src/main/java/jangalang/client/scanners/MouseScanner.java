@@ -40,7 +40,7 @@ public class MouseScanner extends MouseAdapter {
         // Get delta mouse movement
         int dx = e.getXOnScreen() + (offsetToggle ? 1 : 0) - center.x;
         if (dx != 0) { // Don't send non-movements
-            game.mouseMoved(dx);
+            game.mouseMoved(-dx);
         }
 
         offsetToggle = !offsetToggle;
