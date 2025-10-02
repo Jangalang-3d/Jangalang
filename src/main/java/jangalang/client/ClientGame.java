@@ -156,8 +156,10 @@ public class ClientGame implements GameMode {
         boolean backward = local.keySet.contains("s");
         boolean left = local.keySet.contains("a");
         boolean right = local.keySet.contains("d");
+        double viewAngle = local.mouseUpdated ? local.mouseDelta : 0;
+        local.mouseUpdated = false;
 
-        sendInput(forward, backward, left, right, 0);
+        sendInput(forward, backward, left, right, viewAngle);
     }
 
     @Override
@@ -431,7 +433,7 @@ public class ClientGame implements GameMode {
     }
     @Override public void mouseClicked(java.awt.event.MouseEvent e) {}
     @Override public void mouseMoved(int e) {
-        // forwarded mouse delta: convert to an input with zero movement and only rotation
-        sendInput(false, false, false, false, e * MOUSE_SENSITIVITY);
+        local.mouseDelta = e * MOUSE_SENSITIVITY;
+        local.mouseUpdated = true;
     }
 }

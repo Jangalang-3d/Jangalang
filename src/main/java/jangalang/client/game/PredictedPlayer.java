@@ -14,6 +14,8 @@ public class PredictedPlayer {
     private static final double MAX_SPEED = 0.3;
     private static final double FRICTION = 0.9;
     public HashSet<String> keySet = new HashSet<String>();
+    public double mouseDelta = 0;
+    public boolean mouseUpdated = false;
 
     public void applyInput(InputPacket ip) {
         double dirX = 0;
