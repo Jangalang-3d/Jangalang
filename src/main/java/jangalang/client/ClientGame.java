@@ -242,33 +242,32 @@ public class ClientGame implements GameMode {
             final double stepX = diffRayX * (rowDistance / (double) (screenW - 1));
             final double stepY = diffRayY * (rowDistance / (double) (screenW - 1));
 
-            int baseIdx = y * screenW;
+            final int baseIdx = y * screenW;
+            final boolean floorWIsSquared = (floorW & (floorW - 1)) != 0;
+            final boolean floorHIsSquared = (floorH & (floorH - 1)) != 0;
+            final double minShade = 0.2;
+            final double shadeRange = 0.8;
             for (int x = 0; x < screenW; ++x) {
                 // sample floor texture using fractional part (wrap)
-                double fx = worldX - Math.floor(worldX);
-                double fy = worldY - Math.floor(worldY);
-                int tx = (int) (fx * floorW) & (floorW - 1); // bitmask wrap if width is power-of-two
-                int ty = (int) (fy * floorH) & (floorH - 1);
+                final double fx = worldX - Math.floor(worldX);
+                final double fy = worldY - Math.floor(worldY);
 
-                // fallback to safe modulo if not pow2:
-                if ((floorW & (floorW - 1)) != 0) {
-                    tx = ((int) (Math.abs(fx * floorW))) % floorW;
-                }
-                if ((floorH & (floorH - 1)) != 0) {
-                    ty = ((int) (Math.abs(fy * floorH))) % floorH;
-                }
+                final int tx = floorWIsSquared
+                    ? ((int) (Math.abs(fx * floorW))) % floorW
+                    : (int) (fx * floorW) & (floorW - 1);
+                final int ty = floorHIsSquared
+                    ? ((int) (Math.abs(fy * floorH))) % floorH
+                    : (int) (fy * floorH) & (floorH - 1);
 
-                int fpix = floorPixels[ty * floorW + tx];
+                final int fpix = floorPixels[ty * floorW + tx];
 
                 // Apply simple distance-based darkening (using rowDistance)
-                double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, VIEW_DISTANCE), 1.0);
-                shade = 0.2 + 0.8 * shade;
-                int red = (int) (((fpix >> 16) & 0xFF) * shade);
-                int green = (int) (((fpix >> 8) & 0xFF) * shade);
-                int blue = (int) ((fpix & 0xFF) * shade);
-                int shaded = (red << 16) | (green << 8) | blue;
+                final double shade = minShade + shadeRange * (1 - Math.min(rowDistance / VIEW_DISTANCE, 1.0));
 
-                pixels[baseIdx + x] = shaded;
+                pixels[baseIdx + x] =
+                    (((int)(((fpix >> 16) & 0xFF) * shade)) << 16) |
+                    (((int)(((fpix >> 8) & 0xFF) * shade)) << 8) |
+                    ((int)((fpix & 0xFF) * shade));
 
                 worldX += stepX;
                 worldY += stepY;
@@ -280,7 +279,7 @@ public class ClientGame implements GameMode {
         final double textureScaleVertical = 1.0; // Tiling for vertical walls
 
         for (int x = 0; x < screenW; ++x) {
-            double cameraX = (2.0 * x / (screenW - 1) - 1.0);
+            final double cameraX = (2.0 * x / (screenW - 1) - 1.0);
             double rdx = dirX + planeX * cameraX;
             double rdy = dirY + planeY * cameraX;
 
@@ -291,7 +290,7 @@ public class ClientGame implements GameMode {
 
             // Find closest wall intersection
             for (Wall wall : map.getWalls()) {
-                Double u = wall.rayIntersect(ox, oy, rdx, rdy);
+                final Double u = wall.rayIntersect(ox, oy, rdx, rdy);
                 if (u != null && u > 1e-9 && u < closest) {
                     closest = u;
                     hitWall = wall;
@@ -300,12 +299,10 @@ public class ClientGame implements GameMode {
                 }
             }
 
-            if (closest == Double.POSITIVE_INFINITY) {
-                continue;
-            }
+            if (closest == Double.POSITIVE_INFINITY) continue;
 
-            double perpDist = closest;
-            int lineHeight = (int) (screenH / perpDist);
+            // double perpDist = closest;
+            final int lineHeight = (int) (screenH / closest);
             int drawStart = screenH / 2 - lineHeight / 2;
             int drawEnd = screenH / 2 + lineHeight / 2;
 
@@ -319,21 +316,21 @@ public class ClientGame implements GameMode {
             double textureScale = textureScaleHorizontal; // default
 
             if (hitWall != null) {
-                double wallDx = hitWall.end.getKey() - hitWall.start.getKey();
-                double wallDy = hitWall.end.getValue() - hitWall.start.getValue();
-                double wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
+                final double wallDx = hitWall.end.getKey() - hitWall.start.getKey();
+                final double wallDy = hitWall.end.getValue() - hitWall.start.getValue();
+                final double wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
 
-                double hitDx = hitX - hitWall.start.getKey();
-                double hitDy = hitY - hitWall.start.getValue();
+                final double hitDx = hitX - hitWall.start.getKey();
+                final double hitDy = hitY - hitWall.start.getValue();
 
-                double hitDist = (hitDx * wallDx + hitDy * wallDy) / wallLength;
+                final double hitDist = (hitDx * wallDx + hitDy * wallDy) / wallLength;
 
                 // Determine if wall is more horizontal or vertical
-                boolean isHorizontal = Math.abs(wallDx) > Math.abs(wallDy);
+                final boolean isHorizontal = Math.abs(wallDx) > Math.abs(wallDy);
                 textureScale = isHorizontal ? textureScaleHorizontal : textureScaleVertical;
 
                 texXf = hitDist * textureScale;
-                texXf = texXf - Math.floor(texXf);
+                texXf -= Math.floor(texXf);
             }
 
             int texCol = (int) (texXf * wallW);
@@ -341,23 +338,22 @@ public class ClientGame implements GameMode {
 
             // Render wall slice
             for (int y = drawStart; y <= drawEnd; ++y) {
-                double relativeY = (y - drawStart) / (double) lineHeight;
+                final double relativeY = (y - drawStart) / (double) lineHeight;
                 double texY = relativeY * textureScale;
-                texY = texY - Math.floor(texY);
+                texY -= Math.floor(texY);
 
                 int texRow = (int) (texY * wallH);
                 texRow = Math.max(0, Math.min(wallH - 1, texRow));
 
-                int texturePixel = wallPixels[texRow * wallW + texCol];
+                final int texturePixel = wallPixels[texRow * wallW + texCol];
 
-                double maxView = VIEW_DISTANCE;
-                double shade = 1.0 - Math.min(perpDist / maxView, 1.0);
+                double shade = 1.0 - Math.min(closest / VIEW_DISTANCE, 1.0);
                 shade = 0.3 + 0.7 * shade;
 
-                int r = (int) (((texturePixel >> 16) & 0xFF) * shade);
-                int gg = (int) (((texturePixel >> 8) & 0xFF) * shade);
-                int b = (int) ((texturePixel & 0xFF) * shade);
-                int shaded = (r << 16) | (gg << 8) | b;
+                final int red = (int) (((texturePixel >> 16) & 0xFF) * shade);
+                final int green = (int) (((texturePixel >> 8) & 0xFF) * shade);
+                final int blue = (int) ((texturePixel & 0xFF) * shade);
+                final int shaded = (red << 16) | (green << 8) | blue;
 
                 pixels[y * screenW + x] = shaded;
             }
@@ -381,11 +377,11 @@ public class ClientGame implements GameMode {
 
         BufferedImage weaponSprite = ResourceLoader.weaponSprites.get(this.currentFireFrame);
 
-        double scale = 0.4; // 30% of screen height
-        int h = (int)(screenH * scale);
-        int w = weaponSprite.getWidth() * h / weaponSprite.getHeight();
-        int wx = Math.max(0, screenW - (int)(w * 1.5));
-        int wy = Math.max(0, screenH - h);
+        final double scale = 0.4; // 30% of screen height
+        final int h = (int)(screenH * scale);
+        final int w = weaponSprite.getWidth() * h / weaponSprite.getHeight();
+        final int wx = Math.max(0, screenW - (int)(w * 1.5));
+        final int wy = Math.max(0, screenH - h);
         g.drawImage(weaponSprite, wx, wy, w, h, null);
 
         window.setBackground(Color.darkGray);

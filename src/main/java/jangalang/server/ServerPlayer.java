@@ -38,12 +38,12 @@ public class ServerPlayer {
             dirY -= fy;
         }
         if (in.left) {
-            dirX += fy;
-            dirY -= fx;
-        }
-        if (in.right) {
             dirX -= fy;
             dirY += fx;
+        }
+        if (in.right) {
+            dirX += fy;
+            dirY -= fx;
         }
         boolean accelerating = (dirX != 0 || dirY != 0);
         if (accelerating) {
