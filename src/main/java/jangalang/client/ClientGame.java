@@ -44,7 +44,7 @@ public class ClientGame implements GameMode {
     private volatile long clientTick = 0;
 
     private BufferedImage wallTexture = ResourceLoader.wallTextures.get(1);
-    private BufferedImage floorTexture = ResourceLoader.wallTextures.get(1);
+    private BufferedImage floorTexture = ResourceLoader.floorTextures.get(2);
 
     private int currentFireFrame = 0;
     private boolean isShooting = false;
@@ -284,74 +284,89 @@ public class ClientGame implements GameMode {
         }
 
         // --- WALL RENDERING (per-column) ---
-        // For each vertical screen column cast a ray (same logic you used before) but write pixels into `pixels[]`
+        // Use the same projection method as floor casting for consistency
         for (int x = 0; x < screenW; ++x) {
-            // cameraX in -1..1
-            double cameraX = (screenW == 1) ? 0.0 : (2.0 * x / (screenW - 1) - 1.0);
-
-            // ray direction using plane interpolation (dir + plane * cameraX)
+            double cameraX = (2.0 * x / (screenW - 1) - 1.0);
             double rdx = dirX + planeX * cameraX;
             double rdy = dirY + planeY * cameraX;
-            // normalize is not necessary for intersection math; rayIntersect expects direction vector.
 
-            // find closest intersection along this ray
             double closest = Double.POSITIVE_INFINITY;
-            double hitX = 0.0, hitY = 0.0;
+            Wall hitWall = null;
+            double hitX = 0.0;
+            double hitY = 0.0;
+
+            // Find closest wall intersection
             for (Wall wall : map.getWalls()) {
                 Double u = wall.rayIntersect(ox, oy, rdx, rdy);
                 if (u != null && u > 1e-9 && u < closest) {
                     closest = u;
+                    hitWall = wall;
                     hitX = ox + rdx * u;
                     hitY = oy + rdy * u;
                 }
             }
-            if (closest == Double.POSITIVE_INFINITY) closest = ApplicationProperties.getDouble("game.user.viewdist");
 
-            // remove fish-eye (convert to perpendicular distance)
-            double perpDist = closest * Math.cos(Math.atan2(rdy, rdx) - playerAngle);
-            if (perpDist < 1e-6) perpDist = 1e-6;
+            if (closest == Double.POSITIVE_INFINITY) {
+                continue; // No wall hit, skip this column
+            }
 
-            // compute vertical slice height
-            int lineHeight = (int) ((1.0 * screenH) / perpDist * (projPlaneDist / (screenW / 2.0)));
+            // SIMPLIFIED: Use perpendicular distance directly (no cosine correction needed with this method)
+            double perpDist = closest;
 
-            int drawStart = -lineHeight / 2 + screenH / 2;
-            int drawEnd = lineHeight / 2 + screenH / 2;
+            // Calculate wall height using consistent projection
+            int lineHeight = (int)(screenH / perpDist);
+            int drawStart = screenH / 2 - lineHeight / 2;
+            int drawEnd = screenH / 2 + lineHeight / 2;
+
+            // Clamp to screen bounds
             if (drawStart < 0) drawStart = 0;
             if (drawEnd >= screenH) drawEnd = screenH - 1;
 
-            // texture X: decide whether to use fractional part of hitX or hitY depending on wall orientation
-            double texXf = hitX - Math.floor(hitX);
-            // detect near-integer X (vertical wall) — threshold small to avoid floating rounding issues
-            if (Math.abs(hitX - Math.floor(hitX + 0.5)) < 1e-3) texXf = hitY - Math.floor(hitY);
-            int texCol = (int) (texXf * wallW);
-            if (texCol < 0) texCol = 0;
-            if (texCol >= wallW) texCol = wallW - 1;
+            // Texture coordinate calculation
+            double texXf = 0.0;
+            if (hitWall != null) {
+                // Calculate exact hit position along the wall segment
+                double wallDx = hitWall.end.getKey() - hitWall.start.getKey();
+                double wallDy = hitWall.end.getValue() - hitWall.start.getValue();
+                double wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
 
-            final int colIndexBase = texCol; // column offset in texture
+                // Vector from wall start to hit point
+                double hitDx = hitX - hitWall.start.getKey();
+                double hitDy = hitY - hitWall.start.getValue();
 
-            // Loop over vertical slice and copy into framebuffer
-            final int sliceHeight = Math.max(1, drawEnd - drawStart + 1);
+                // Project hit vector onto wall vector to get position along wall
+                double hitDist = (hitDx * wallDx + hitDy * wallDy) / wallLength;
+                texXf = hitDist / wallLength;
+
+                // Ensure texture coordinate is within [0,1]
+                texXf = texXf - Math.floor(texXf);
+                if (texXf < 0) texXf += 1.0;
+            }
+
+            int texCol = (int)(texXf * wallW);
+            texCol = Math.max(0, Math.min(wallW - 1, texCol));
+
+            // Render wall slice
             for (int y = drawStart; y <= drawEnd; ++y) {
-                double texYRatio = (y - drawStart) / (double) sliceHeight;
-                int texRow = (int) (texYRatio * wallH);
-                if (texRow < 0) texRow = 0;
-                if (texRow >= wallH) texRow = wallH - 1;
+                double texY = (y - drawStart) / (double)lineHeight;
+                int texRow = (int)(texY * wallH);
+                texRow = Math.max(0, Math.min(wallH - 1, texRow));
 
-                int texturePixel = wallPixels[texRow * wallW + colIndexBase];
+                int texturePixel = wallPixels[texRow * wallW + texCol];
 
-                // shading by perpendicular distance
+                // Distance-based shading
                 double maxView = ApplicationProperties.getDouble("game.user.viewdist");
-                double shade = 1.0 - Math.min(perpDist / Math.max(1.0, maxView), 1.0);
-                shade = 0.2 + 0.8 * shade;
-                int r = (int) (((texturePixel >> 16) & 0xFF) * shade);
-                int gg = (int) (((texturePixel >> 8) & 0xFF) * shade);
-                int b = (int) ((texturePixel & 0xFF) * shade);
+                double shade = 1.0 - Math.min(perpDist / maxView, 1.0);
+                shade = 0.3 + 0.7 * shade;
+
+                int r = (int)(((texturePixel >> 16) & 0xFF) * shade);
+                int gg = (int)(((texturePixel >> 8) & 0xFF) * shade);
+                int b = (int)((texturePixel & 0xFF) * shade);
                 int shaded = (r << 16) | (gg << 8) | b;
 
                 pixels[y * screenW + x] = shaded;
             }
         }
-
 
         // --- BLIT FRAMEBUFFER ONTO SCREEN ---
         g.drawImage(frame, 0, 0, null);

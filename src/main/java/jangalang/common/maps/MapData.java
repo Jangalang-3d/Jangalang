@@ -34,4 +34,30 @@ public class MapData implements Serializable {
     public ArrayList<Wall> getWalls() {
         return this.walls;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Pair<?, ?> s : this.spawns) {
+            sb.append("Spawn(");
+            sb.append(s.getKey());
+            sb.append(" ");
+            sb.append(s.getValue());
+            sb.append(")\n");
+        }
+
+        for (Wall w : this.walls) {
+            sb.append("Wall(");
+            sb.append(w.start.getKey());
+            sb.append(" ");
+            sb.append(w.start.getValue());
+            sb.append(" ");
+            sb.append(w.end.getKey());
+            sb.append(" ");
+            sb.append(w.end.getValue());
+            sb.append(")\n");
+        }
+
+        return sb.toString();
+    }
 }

@@ -61,6 +61,7 @@ public class NetworkClient {
         this.assignedId = r.assignedId;
         this.serverUdpPort = r.serverUdpPort;
         this.map = r.map;
+        System.out.println(this.map.toString());
         System.out.printf("Handshake complete: id=%d serverUdp=%d mapLoaded%n", assignedId, serverUdpPort);
         // start UDP receive loop
         udpReceiver.submit(this::udpLoop);

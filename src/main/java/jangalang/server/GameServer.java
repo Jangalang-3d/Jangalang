@@ -36,6 +36,7 @@ public class GameServer {
 
     public GameServer(MapData map, int udpPort) {
         this.map = map;
+        System.out.println(map.toString());
         this.udpPort = udpPort;
         try {
             this.udpSocket = new DatagramSocket(udpPort);

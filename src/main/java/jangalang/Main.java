@@ -20,8 +20,8 @@ class Main {
 
     public static void main(String[] args) {
         try {
-            Game.floorTexture = ImageIO.read(Main.class.getResourceAsStream("/sprites/walls/wall1.png"));
-            Game.wallTexture = ImageIO.read(Main.class.getResourceAsStream("/sprites/ground/Brick_03.png"));
+            Game.floorTexture = ImageIO.read(Main.class.getResourceAsStream("/textures/walls/wall1.png"));
+            Game.wallTexture = ImageIO.read(Main.class.getResourceAsStream("/textures/ground/Brick_03.png"));
 
             ArrayList<BufferedImage> weaponSpriteList = new ArrayList<>();
             weaponSpriteList.add(ImageIO.read(Main.class.getResourceAsStream("/sprites/guns/pistol/2PISA0.png")));
