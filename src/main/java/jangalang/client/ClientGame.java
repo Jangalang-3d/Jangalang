@@ -30,6 +30,10 @@ public class ClientGame implements GameMode {
     private final int clientId;
     private MapData map;
     private volatile boolean started = false;
+    private static final double VIEW_DISTANCE = ApplicationProperties.getDouble("game.user.viewdist");
+    private static final double FOV = ApplicationProperties.getDouble("game.user.fov");
+    private static final double MOUSE_SENSITIVITY = ApplicationProperties.getDouble("game.user.sensitivity");
+    private static final long FPS = ApplicationProperties.getInt("game.fps");
 
     // predicted local player state
     private final PredictedPlayer local = new PredictedPlayer();
@@ -61,8 +65,7 @@ public class ClientGame implements GameMode {
 
     public void start() {
         // tick loop at client fps for local prediction
-        long fps = ApplicationProperties.getInt("game.fps");
-        long ms = 1000L / fps;
+        long ms = 1000L / FPS;
         executor.scheduleAtFixedRate(this::clientTick, 0, ms, TimeUnit.MILLISECONDS);
         started = true;
     }
@@ -87,7 +90,7 @@ public class ClientGame implements GameMode {
     private void clientTick() {
         // For now no periodic state update required; we rely on sendInput applying movement.
         // We do update other players' extrapolation here
-        double dt = 1.0 / ApplicationProperties.getInt("game.fps");
+        double dt = 1.0 / FPS;
         for (RemotePlayer rp : others.values()) {
             rp.simulate(dt);
         }
@@ -159,11 +162,6 @@ public class ClientGame implements GameMode {
 
     @Override
     public void render(JPanel window, Graphics g) {
-        // You should integrate your previous PlayingState.render code here, using:
-        // - local.x / local.y as camera origin (replace player references)
-        // - use map returned from handshake (net receives MapData in handshake; store into map)
-        // For brevity this demo just draws a HUD and remote players.
-
         final int screenW = window.getWidth();
         final int screenH = window.getHeight();
 
@@ -175,8 +173,8 @@ public class ClientGame implements GameMode {
         final int skyColor = (105 << 16) | (12 << 8) | 15;
         // Render sky half
         for (int y = 0; y < screenH / 2; ++y) {
-            int idx = y * screenW;
-            for (int x = 0; x < screenW; ++x) pixels[idx++] = skyColor;
+            int i = y * screenW;
+            for (int x = 0; x < screenW; ++x) pixels[i++] = skyColor;
         }
 
         final int floorBase = (30 << 16) | (30 << 8) | 30;
@@ -194,13 +192,10 @@ public class ClientGame implements GameMode {
         Vector center = new Vector(local.getViewAngle());
         final double dirX = center.x;
         final double dirY = center.y;
-        final double playerAngle = Math.atan2(dirY, dirX);
-
-        final double fov = ApplicationProperties.getDouble("game.user.fov");
 
         // Precompute camera plane (perpendicular to view dir). We need this for floor-casting interpolation.
-        // plane vector length is tan(fov/2)
-        final double planeScale = Math.tan(fov / 2.0);
+        // plane vector length is tan(FOV/2)
+        final double planeScale = Math.tan(FOV / 2.0);
         final double planeX = -dirY * planeScale;
         final double planeY =  dirX * planeScale;
 
@@ -218,15 +213,15 @@ public class ClientGame implements GameMode {
         floorTex.getRGB(0, 0, floorW, floorH, floorPixels, 0, floorW);
 
         // precompute proj plane distance used for vertical slice height -> helps remove fish-eye
-        final double projPlaneDist = (screenW / 2.0) / Math.tan(fov / 2.0);
+        final double projPlaneDist = (screenW / 2.0) / Math.tan(FOV / 2.0);
 
         // --- FLOOR CASTING (per-row) ---
         // We'll use interpolation between left and right ray directions for each row.
         // Precompute left and right ray directions (for cameraX = -1 and +1)
-        double leftRayX = dirX + planeX * -1.0;
-        double leftRayY = dirY + planeY * -1.0;
-        double rightRayX = dirX + planeX * 1.0;
-        double rightRayY = dirY + planeY * 1.0;
+        final double leftRayX = dirX + planeX * -1.0;
+        final double leftRayY = dirY + planeY * -1.0;
+        final double diffRayX = (dirX + planeX * 1.0) - leftRayX;
+        final double diffRayY = (dirY + planeY * 1.0) - leftRayY;
 
         final int halfH = screenH / 2;
         // iterate rows bottom half only
@@ -241,14 +236,11 @@ public class ClientGame implements GameMode {
             // Interpolate start world point (floor) for x=0 and step per column
             // worldX = ox + dir * rowDistance; but we need different direction per column between leftRay and rightRay.
             // Precompute base for left ray:
-            final double floorStartX = (ox * -0.5) + leftRayX * rowDistance;
-            final double floorStartY = (oy * -0.5) + leftRayY * rowDistance;
+            double worldX = (ox * -0.5) + leftRayX * rowDistance;
+            double worldY = (oy * -0.5) + leftRayY * rowDistance;
             // step increments (difference across the screen)
-            final double stepX = (rightRayX - leftRayX) * (rowDistance / (double) (screenW - 1));
-            final double stepY = (rightRayY - leftRayY) * (rowDistance / (double) (screenW - 1));
-
-            double worldX = floorStartX;
-            double worldY = floorStartY;
+            final double stepX = diffRayX * (rowDistance / (double) (screenW - 1));
+            final double stepY = diffRayY * (rowDistance / (double) (screenW - 1));
 
             int baseIdx = y * screenW;
             for (int x = 0; x < screenW; ++x) {
@@ -269,7 +261,7 @@ public class ClientGame implements GameMode {
                 int fpix = floorPixels[ty * floorW + tx];
 
                 // Apply simple distance-based darkening (using rowDistance)
-                double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, ApplicationProperties.getDouble("game.user.viewdist")), 1.0);
+                double shade = 1.0 - Math.min(rowDistance / Math.max(1.0, VIEW_DISTANCE), 1.0);
                 shade = 0.2 + 0.8 * shade;
                 int red = (int) (((fpix >> 16) & 0xFF) * shade);
                 int green = (int) (((fpix >> 8) & 0xFF) * shade);
@@ -358,7 +350,7 @@ public class ClientGame implements GameMode {
 
                 int texturePixel = wallPixels[texRow * wallW + texCol];
 
-                double maxView = ApplicationProperties.getDouble("game.user.viewdist");
+                double maxView = VIEW_DISTANCE;
                 double shade = 1.0 - Math.min(perpDist / maxView, 1.0);
                 shade = 0.3 + 0.7 * shade;
 
@@ -444,6 +436,6 @@ public class ClientGame implements GameMode {
     @Override public void mouseClicked(java.awt.event.MouseEvent e) {}
     @Override public void mouseMoved(int e) {
         // forwarded mouse delta: convert to an input with zero movement and only rotation
-        sendInput(false, false, false, false, e * ApplicationProperties.getDouble("game.user.sensitivity"));
+        sendInput(false, false, false, false, e * MOUSE_SENSITIVITY);
     }
 }
