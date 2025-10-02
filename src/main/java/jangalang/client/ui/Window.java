@@ -1,6 +1,12 @@
 package jangalang.client.ui;
 
+import java.awt.Cursor;
 import java.awt.Graphics;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -27,6 +33,11 @@ public class Window {
         frame.setUndecorated(true);
         frame.setResizable(false);
 
+        GraphicsDevice gd = GraphicsEnvironment
+            .getLocalGraphicsEnvironment()
+            .getDefaultScreenDevice();
+        gd.setFullScreenWindow(frame);
+
         renderer = new RendererPanel(game);
         frame.getContentPane().add(renderer);
         frame.setVisible(true);
@@ -36,6 +47,13 @@ public class Window {
             renderer.repaint();
             game.update();
         }).start();
+
+        if (ApplicationProperties.get("game.user.hidemouse").equals("true")) {
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
+            BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+            Cursor blankCursor = toolkit.createCustomCursor(cursorImg, new Point(0, 0), "blank");
+            frame.setCursor(blankCursor);
+        }
     }
 
     private void installInputs() {
