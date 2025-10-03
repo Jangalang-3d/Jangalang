@@ -60,8 +60,7 @@ public class MouseScanner extends MouseAdapter {
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
-        System.out.println("click!");
-        // game.mouseClicked(e);
+    public void mousePressed(MouseEvent e) {
+        game.mouseClicked(e);
     }
 }

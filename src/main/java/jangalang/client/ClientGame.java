@@ -431,7 +431,14 @@ public class ClientGame implements GameMode {
            case KeyEvent.VK_D -> local.keySet.remove("d");
         }
     }
-    @Override public void mouseClicked(java.awt.event.MouseEvent e) {}
+    @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+        if (!isShooting) {
+            this.isShooting = true;
+            this.currentFireFrame = 0;
+            this.frameTimer = 0;
+        }
+    }
+
     @Override public void mouseMoved(int e) {
         local.mouseDelta = e * MOUSE_SENSITIVITY;
         local.mouseUpdated = true;

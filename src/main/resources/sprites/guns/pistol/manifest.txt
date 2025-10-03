@@ -1,5 +1,4 @@
 2PISA0.png
 2PISB0.png
-2PISC0.png
 2PISD0.png
 2PISF0.png
